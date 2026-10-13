@@ -17,6 +17,27 @@ class ProductRepository extends ServiceEntityRepository
     }
 
     /**
+     * @return list<array{id: int, name: string, price: float, rating: ?float}>
+     */
+    public function findPageWithRating(int $limit): array
+    {
+        $products = $this->createQueryBuilder('p')
+            ->select('p.id', 'p.name', 'p.price', 'AVG(r.rating) AS rating')
+            ->leftJoin('p.reviews', 'r')
+            ->groupBy('p.id')
+            ->orderBy('p.id')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getArrayResult();
+
+        foreach ($products as &$product) {
+            $product['rating'] = null === $product['rating'] ? null : round((float) $product['rating'], 2);
+        }
+
+        return $products;
+    }
+
+    /**
      * @return list<array{id: int, name: string}>
      */
     public function findAllNames(): array

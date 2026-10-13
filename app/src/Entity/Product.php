@@ -42,18 +42,4 @@ class Product
     {
         return $this->price;
     }
-
-    public function averageRating(): ?float
-    {
-        if ($this->reviews->isEmpty()) {
-            return null;
-        }
-
-        $total = 0;
-        foreach ($this->reviews as $review) {
-            $total += $review->getRating();
-        }
-
-        return round($total / \count($this->reviews), 2);
-    }
 }

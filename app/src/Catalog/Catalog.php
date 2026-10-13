@@ -19,11 +19,11 @@ class Catalog
     }
 
     /**
-     * @return list<Product>
+     * @return list<array{id: int, name: string, price: float, rating: ?float}>
      */
     public function list(int $limit): array
     {
-        return $this->read(fn () => $this->products->findBy([], ['id' => 'ASC'], $limit));
+        return $this->read(fn () => $this->products->findPageWithRating($limit));
     }
 
     public function get(int $id): ?Product

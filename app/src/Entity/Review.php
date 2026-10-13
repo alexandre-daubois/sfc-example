@@ -20,9 +20,4 @@ class Review
         private int $rating,
     ) {
     }
-
-    public function getRating(): int
-    {
-        return $this->rating;
-    }
 }

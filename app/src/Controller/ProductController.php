@@ -20,17 +20,7 @@ class ProductController extends AbstractController
     #[Route('/products', methods: ['GET'])]
     public function list(): JsonResponse
     {
-        $products = [];
-        foreach ($this->catalog->list(100) as $product) {
-            $products[] = [
-                'id' => $product->getId(),
-                'name' => $product->getName(),
-                'price' => $product->getPrice(),
-                'rating' => $product->averageRating(),
-            ];
-        }
-
-        return $this->json($products);
+        return $this->json($this->catalog->list(100));
     }
 
     #[Route('/products/{id<\d+>}', methods: ['GET'])]
