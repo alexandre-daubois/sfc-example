@@ -1,0 +1,26 @@
+{
+	admin {$ADMIN_ADDR:localhost:2019}
+	metrics {
+		per_host
+	}
+	frankenphp
+}
+
+http://shop.localhost:8800 {
+	log
+
+	request_header X-Request-ID {http.request.uuid}
+	header X-Request-ID {http.request.uuid}
+
+	root /app/public
+	php_server {
+		worker /app/public/index.php
+	}
+}
+
+# Private port for SPX and the routes that only answer on it, never reachable from the shop.
+# No worker here: every request boots Symfony, which is fine for a scrape or a profile.
+http://:6060 {
+	root /app/public
+	php_server
+}

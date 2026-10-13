@@ -1,0 +1,69 @@
+services:
+  php:
+    build: .
+    environment:
+      ADMIN_ADDR: 0.0.0.0:2019
+      APP_SECRET: symfonycon-workshop
+      DATABASE_URL: postgresql://app:app@database:5432/app?serverVersion=18&charset=utf8
+      PGCONNECT_TIMEOUT: 2
+    volumes:
+      - ./app:/app
+      - /app/var
+      - ./frankenphp/Caddyfile:/etc/frankenphp/Caddyfile:ro
+      - ./frankenphp/conf.d/10-app.ini:/usr/local/etc/php/conf.d/10-app.ini:ro
+    ports:
+      - "127.0.0.1:8800:8800"
+      - "127.0.0.1:2019:2019"
+      - "127.0.0.1:6060:6060"
+    cpus: 2
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(false === @file_get_contents('http://localhost:2019/config/') ? 1 : 0);"]
+      interval: 2s
+      start_period: 120s
+    depends_on:
+      database:
+        condition: service_healthy
+
+  worker:
+    build: .
+    command: ["php", "bin/console", "messenger:consume", "async", "-vv"]
+    healthcheck:
+      disable: true
+    environment:
+      APP_SECRET: symfonycon-workshop
+      DATABASE_URL: postgresql://app:app@database:5432/app?serverVersion=18&charset=utf8
+      PGCONNECT_TIMEOUT: 2
+    volumes:
+      - ./app:/app
+      - /app/var
+    restart: unless-stopped
+    depends_on:
+      php:
+        condition: service_healthy
+
+  database:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: app
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "app", "-U", "app"]
+      interval: 2s
+      start_period: 30s
+    volumes:
+      - database_data:/var/lib/postgresql
+
+  loadgen:
+    image: php:8.5-cli-alpine
+    profiles: [tools]
+    # PHP as PID 1 ignores Ctrl+C, the init forwards it.
+    init: true
+    working_dir: /loadgen
+    volumes:
+      - ./loadgen:/loadgen:ro
+    entrypoint: ["php", "/loadgen/loadgen.php"]
+
+volumes:
+  database_data:
