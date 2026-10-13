@@ -41,11 +41,13 @@ class Catalog
 
     public function refresh(): void
     {
+        $factor = $this->supplier->fetchPriceFactor();
+
         $lock = $this->locks->createLock('catalog');
         $lock->acquire(true);
 
         try {
-            $this->products->applyPriceFactor($this->supplier->fetchPriceFactor());
+            $this->products->applyPriceFactor($factor);
         } finally {
             $lock->release();
         }
