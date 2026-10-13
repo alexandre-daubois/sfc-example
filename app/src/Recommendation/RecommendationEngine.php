@@ -2,7 +2,9 @@
 
 namespace App\Recommendation;
 
-class RecommendationEngine
+use Symfony\Contracts\Service\ResetInterface;
+
+class RecommendationEngine implements ResetInterface
 {
     /**
      * Memoized per visitor, so a visitor keeps seeing the same recommendations.
@@ -17,6 +19,11 @@ class RecommendationEngine
     public function forVisitor(string $visitor): array
     {
         return $this->byVisitor[$visitor] ??= $this->compute();
+    }
+
+    public function reset(): void
+    {
+        $this->byVisitor = [];
     }
 
     /**
