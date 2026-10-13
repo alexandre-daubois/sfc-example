@@ -18,8 +18,9 @@ class Search
     {
         $products = $this->catalog->names();
 
-        usort($products, static fn (array $a, array $b): int => similar_text($query, $b['name']) <=> similar_text($query, $a['name']));
+        $scores = array_map(static fn (array $product): int => similar_text($query, $product['name']), $products);
+        arsort($scores);
 
-        return \array_slice($products, 0, $limit);
+        return array_map(static fn (int $i): array => $products[$i], array_keys(\array_slice($scores, 0, $limit, true)));
     }
 }
