@@ -2,11 +2,26 @@
 
 namespace App\Controller;
 
-// TODO(step-08): Ember only sees HTTP, and every POST /orders answers 202 in a
-// few milliseconds. Serve Prometheus metrics on /metrics, on the private port
-// only (6060), with promphp/prometheus_client_php and its APCu storage, which
-// every PHP thread of FrankenPHP shares. Add a counter of the orders placed and
-// a gauge of the messages waiting in the "async" transport.
+use Prometheus\CollectorRegistry;
+use Prometheus\RenderTextFormat;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Messenger\Transport\Receiver\MessageCountAwareInterface;
+use Symfony\Component\Routing\Attribute\Route;
+
 class MetricsController
 {
+    #[Route('/metrics', methods: ['GET'], condition: 'request.getPort() == 6060')]
+    public function __invoke(
+        CollectorRegistry $registry,
+        #[Autowire(service: 'messenger.transport.async')] MessageCountAwareInterface $async,
+    ): Response {
+        $registry->getOrRegisterGauge('shop', 'messenger_queue_messages', 'Messages waiting in the async transport.')
+            ->set($async->getMessageCount());
+
+        return new Response(
+            (new RenderTextFormat())->render($registry->getMetricFamilySamples()),
+            headers: ['Content-Type' => RenderTextFormat::MIME_TYPE],
+        );
+    }
 }
